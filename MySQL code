@@ -1,0 +1,179 @@
+-- Step 1: Create the Database
+DROP DATABASE IF EXISTS RailwayReservationSystem;
+CREATE DATABASE RailwayReservationSystem;
+USE RailwayReservationSystem;
+
+-- Step 2: Users Table (Authentication)
+CREATE TABLE Users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    phone VARCHAR(15)
+);
+
+-- Step 3: Passengers Table
+CREATE TABLE Passengers (
+    passenger_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    name VARCHAR(100),
+    age INT,
+    gender ENUM('Male', 'Female', 'Other'),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+);
+
+-- Step 4: Stations Table
+CREATE TABLE Stations (
+    station_id INT AUTO_INCREMENT PRIMARY KEY,
+    station_name VARCHAR(100) UNIQUE,
+    location VARCHAR(100)
+);
+
+-- Step 5: Trains Table
+CREATE TABLE Trains (
+    train_id INT AUTO_INCREMENT PRIMARY KEY,
+    train_name VARCHAR(100),
+    total_seats INT
+);
+
+-- Step 6: Train Schedule Table
+CREATE TABLE TrainSchedule (
+    schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+    train_id INT,
+    source_station_id INT,
+    destination_station_id INT,
+    departure_time DATETIME,
+    arrival_time DATETIME,
+    FOREIGN KEY (train_id) REFERENCES Trains(train_id),
+    FOREIGN KEY (source_station_id) REFERENCES Stations(station_id),
+    FOREIGN KEY (destination_station_id) REFERENCES Stations(station_id)
+);
+
+-- Step 7: Bookings Table
+CREATE TABLE Bookings (
+    booking_id INT AUTO_INCREMENT PRIMARY KEY,
+    passenger_id INT,
+    train_id INT,
+    schedule_id INT,
+    booking_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    seat_no INT,
+    class_type ENUM('Sleeper', 'AC', 'General'),
+    status ENUM('Confirmed', 'Cancelled'),
+    FOREIGN KEY (passenger_id) REFERENCES Passengers(passenger_id),
+    FOREIGN KEY (train_id) REFERENCES Trains(train_id),
+    FOREIGN KEY (schedule_id) REFERENCES TrainSchedule(schedule_id)
+);
+
+-- Step 8: Payments Table
+CREATE TABLE Payments (
+    payment_id INT AUTO_INCREMENT PRIMARY KEY,
+    booking_id INT,
+    amount DECIMAL(10,2),
+    payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    payment_method ENUM('Credit Card', 'Debit Card', 'UPI', 'Net Banking'),
+    status ENUM('Success', 'Failed'),
+    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id)
+);
+
+-- Step 9: Meal Bookings Table
+CREATE TABLE MealBookings (
+    meal_id INT AUTO_INCREMENT PRIMARY KEY,
+    booking_id INT,
+    meal_type ENUM('Veg', 'Non-Veg'),
+    quantity INT,
+    meal_time ENUM('Breakfast', 'Lunch', 'Dinner'),
+    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id)
+);
+
+-- Step 10: Sample Data Insertion
+
+-- Users
+INSERT INTO Users (username, password, email, phone)
+VALUES 
+('bhushan123', 'pass123', 'bhushan@email.com', '9876543210'),
+('sneha456', 'pass456', 'sneha@email.com', '9876500000');
+
+-- Passengers
+INSERT INTO Passengers (user_id, name, age, gender)
+VALUES 
+(1, 'Bhushan Sonar', 22, 'Male'),
+(2, 'Sneha R', 24, 'Female');
+
+-- Stations
+INSERT INTO Stations (station_name, location)
+VALUES 
+('Hubli', 'Karnataka'),
+('Bangalore', 'Karnataka'),
+('Pune', 'Maharashtra');
+
+-- Trains
+INSERT INTO Trains (train_name, total_seats)
+VALUES 
+('Rajdhani Express', 300),
+('Duronto Express', 250);
+
+-- Train Schedule
+INSERT INTO TrainSchedule (train_id, source_station_id, destination_station_id, departure_time, arrival_time)
+VALUES 
+(1, 1, 2, '2025-04-16 08:00:00', '2025-04-16 14:00:00'),
+(2, 2, 3, '2025-04-17 09:30:00', '2025-04-17 18:30:00');
+
+-- Bookings
+INSERT INTO Bookings (passenger_id, train_id, schedule_id, seat_no, class_type, status)
+VALUES 
+(1, 1, 1, 23, 'AC', 'Confirmed'),
+(2, 2, 2, 5, 'Sleeper', 'Confirmed');
+
+-- Payments
+INSERT INTO Payments (booking_id, amount, payment_method, status)
+VALUES 
+(1, 1200.50, 'UPI', 'Success'),
+(2, 950.00, 'Credit Card', 'Success');
+
+-- Meal Bookings
+INSERT INTO MealBookings (booking_id, meal_type, quantity, meal_time)
+VALUES 
+(1, 'Veg', 1, 'Lunch'),
+(2, 'Non-Veg', 1, 'Dinner');
+
+-- Step 11: Test Queries
+
+-- a. Show all bookings with passenger names and train info
+SELECT 
+    b.booking_id,
+    p.name AS passenger_name,
+    t.train_name,
+    s.departure_time,
+    s.arrival_time,
+    b.seat_no,
+    b.class_type,
+    b.status
+FROM Bookings b
+JOIN Passengers p ON b.passenger_id = p.passenger_id
+JOIN Trains t ON b.train_id = t.train_id
+JOIN TrainSchedule s ON b.schedule_id = s.schedule_id;
+
+-- b. Show payments with passenger and train details
+SELECT 
+    pay.payment_id,
+    p.name AS passenger_name,
+    t.train_name,
+    pay.amount,
+    pay.payment_method,
+    pay.status
+FROM Payments pay
+JOIN Bookings b ON pay.booking_id = b.booking_id
+JOIN Passengers p ON b.passenger_id = p.passenger_id
+JOIN Trains t ON b.train_id = t.train_id;
+
+-- c. Show meal bookings for each user
+SELECT 
+    u.username,
+    p.name AS passenger_name,
+    m.meal_type,
+    m.meal_time,
+    m.quantity
+FROM MealBookings m
+JOIN Bookings b ON m.booking_id = b.booking_id
+JOIN Passengers p ON b.passenger_id = p.passenger_id
+JOIN Users u ON p.user_id = u.user_id;
