@@ -90,8 +90,9 @@ CREATE TABLE MealBookings (
 -- Users
 INSERT INTO Users (username, password, email, phone)
 VALUES 
-('bhushan123', 'pass123', 'bhushan@email.com', '9876543210'),
-('sneha456', 'pass456', 'sneha@email.com', '9876500000');
+('john_doe', 'john123', 'john.doe@example.com', '9123456780'),
+('emma_smith', 'emma456', 'emma.smith@example.com', '9234567891');
+
 
 -- Passengers
 INSERT INTO Passengers (user_id, name, age, gender)
